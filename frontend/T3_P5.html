@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Política de seguridad: solo se ejecutan scripts propios y de jsDelivr (Bootstrap). Se bloquea cualquier script inyectado. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://127.0.0.1:5000 http://localhost:5000; object-src 'none'; base-uri 'self'; form-action 'none'">
+    <title>Sistema Web APT | Práctica 7</title>
+    <meta name="description" content="Autobuses Pullman Tours - Cotiza y reserva tu próximo viaje.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="estilosP7.css">
+</head>
+<body data-bs-spy="scroll" data-bs-target="#menuPrincipal" data-bs-offset="100" tabindex="0">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">APT Pullman Tours</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-label="Menú">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#titulo-destinos">Destinos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#titulo-paquete">Paquetes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#titulo-cotizador">Cotizar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#admin-panel">Admin</a></li>
+                </ul>
+                <div class="d-flex align-items-center ms-lg-3 mt-2 mt-lg-0 gap-2">
+                    <div id="navSesion">
+                        <button type="button" class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#modalLogin">Iniciar sesión</button>
+                    </div>
+                    <div id="navUsuario" class="d-none text-white align-items-center gap-2">
+                        <span class="small" id="lblUsuario"></span>
+                        <button type="button" id="btnNavCerrarSesion" class="btn btn-danger btn-sm">Salir</button>
+                    </div>
+                    <button id="btnModo" type="button" class="btn btn-outline-light btn-sm rounded-circle btn-modo-nav" aria-label="Cambiar tema">
+                        <svg id="iconoTema" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                            <path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4 my-lg-5">
+        <div class="caja p-4 p-lg-5 rounded-4">
+
+            <!-- BLOQUE 1: ENCABEZADO -->
+            <header class="bloque bloque-logo text-center reveal">
+                <img src="logo-apt.png" alt="Logo APT" width="160" class="logo" id="logoDescuento" style="cursor: pointer;" title="¡Haz clic para reclamar tu cupón!">
+                <h1>Autobuses Pullman Tours</h1>
+                <p class="eslogan" id="eslogan" role="button" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Haz clic para destacar">"Hacer de tu viaje, un placer"</p>
+            </header>
+
+            <hr class="separador">
+
+            <!-- BLOQUE 2: CARRUSEL -->
+            <section class="bloque reveal" id="titulo-destinos" aria-labelledby="titulo-carrusel">
+                <h2 id="titulo-carrusel">Descubre nuestros destinos</h2>
+                <div id="carruselViajes" class="carousel slide carrusel-animado shadow-sm rounded-3 overflow-hidden" data-bs-ride="carousel" data-bs-interval="5000">
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#carruselViajes" data-bs-slide-to="0" class="active" aria-label="Valle de Bravo"></button>
+                        <button type="button" data-bs-target="#carruselViajes" data-bs-slide-to="1" aria-label="Taxco"></button>
+                        <button type="button" data-bs-target="#carruselViajes" data-bs-slide-to="2" aria-label="Puebla"></button>
+                        <button type="button" data-bs-target="#carruselViajes" data-bs-slide-to="3" aria-label="Acapulco"></button>
+                    </div>
+                    <div class="carousel-inner">
+                        <div class="carousel-item active" data-destino="Valle de Bravo">
+                            <img src="valle.png" class="d-block w-100 img-carrusel" alt="Valle de Bravo" style="height: 400px; object-fit: cover;">
+                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded"><h5>Valle de Bravo</h5><p>Escapada natural de 2 días / 1 noche.</p></div>
+                        </div>
+                        <div class="carousel-item" data-destino="Taxco">
+                            <img src="taxco.png" class="d-block w-100 img-carrusel" alt="Taxco" style="height: 400px; object-fit: cover;">
+                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded"><h5>Taxco</h5><p>Pueblo mágico y platería inigualable.</p></div>
+                        </div>
+                        <div class="carousel-item" data-destino="Puebla">
+                            <img src="puebla.png" class="d-block w-100 img-carrusel" alt="Puebla" style="height: 400px; object-fit: cover;">
+                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded"><h5>Puebla</h5><p>Capital gastronómica y cultural.</p></div>
+                        </div>
+                        <div class="carousel-item" data-destino="Acapulco">
+                            <img src="acapulco.png" class="d-block w-100 img-carrusel" alt="Acapulco" style="height: 400px; object-fit: cover;">
+                            <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded"><h5>Acapulco</h5><p>Sol, playa y la magia de La Quebrada.</p></div>
+                        </div>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carruselViajes" data-bs-slide="prev" aria-label="Anterior"><span class="carousel-control-prev-icon"></span></button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carruselViajes" data-bs-slide="next" aria-label="Siguiente"><span class="carousel-control-next-icon"></span></button>
+                </div>
+                <div class="text-center mt-3">
+                    <button type="button" id="btnCarruselMovil" class="btn btn-primary w-100 d-md-none">Seleccionar destino actual</button>
+                </div>
+            </section>
+
+            <hr class="separador">
+
+            <!-- BLOQUE 3: TARJETAS CON BUSCADOR -->
+            <section class="bloque reveal" aria-labelledby="titulo-destinos-lista">
+                <h2 id="titulo-destinos-lista">Elige tu próximo viaje</h2>
+                <div class="row mb-4">
+                    <div class="col-md-8 mx-auto">
+                        <label for="buscadorDestinos" class="form-label text-center w-100 fw-bold">¿A dónde quieres viajar?</label>
+                        <input type="text" id="buscadorDestinos" class="form-control form-control-lg text-center" placeholder="Busca un destino (ej. Puebla)..." maxlength="40" autocomplete="off">
+                        <div id="resultadoBusqueda" class="mt-2 text-center small"></div>
+                    </div>
+                </div>
+                <div class="row g-4" id="contenedorTarjetas"></div>
+            </section>
+
+            <hr class="separador">
+
+            <!-- BLOQUE 4: PAQUETES -->
+            <section class="bloque reveal" aria-labelledby="titulo-paquete">
+                <h2 id="titulo-paquete">Paquetes Destacados</h2>
+                <article class="paquete mb-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-5 mb-3 mb-md-0"><img src="tarahumara.png" alt="Sierra Tarahumara" class="paquete-img" style="object-fit: cover; height: 100%; border-radius: 8px;"></div>
+                        <div class="col-md-7">
+                            <h3 class="paquete-titulo text-start">Sierra Tarahumara y Tren Chepe Express</h3>
+                            <p class="paquete-descripcion text-start">Conoce la <strong>Sierra Tarahumara, Chihuahua</strong> y vive una experiencia en el <strong>Tren Chepe Express</strong>.</p>
+                            <ul class="paquete-info mt-4">
+                                <li><span class="label">Próxima fecha</span><span>29 ene – 2 feb 2027</span></li>
+                                <li><span class="label">Precio por persona</span><span>$16,000.00 MXN <em>(doble)</em></span></li>
+                            </ul>
+                            <div class="botones mt-3">
+                                <button type="button" class="btn btn-primary w-100 btn-reservar-paquete" data-paquete="Sierra Tarahumara" data-bs-toggle="modal" data-bs-target="#modalReserva">Reservar Sierra Tarahumara</button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                <article class="paquete">
+                    <div class="row align-items-center">
+                        <div class="col-md-5 mb-3 mb-md-0"><img src="Machupichu.png" alt="Machu Picchu" class="paquete-img" style="object-fit: cover; height: 100%; border-radius: 8px;"></div>
+                        <div class="col-md-7">
+                            <h3 class="paquete-titulo text-start">Visita la maravilla de Machu Picchu</h3>
+                            <p class="paquete-descripcion text-start">Vive una experiencia inolvidable. <strong>Fecha: Del 8 al 15 de septiembre.</strong></p>
+                            <ul class="paquete-info mt-4">
+                                <li><span class="label">Precio por persona</span><span>$34,000.00 MXN <em>(doble)</em></span></li>
+                                <li><span class="label">Reserva con</span><span>$2,500.00 MXN</span></li>
+                            </ul>
+                            <div class="botones mt-3">
+                                <button type="button" class="btn btn-primary w-100 btn-reservar-paquete" data-paquete="Machu Picchu" data-bs-toggle="modal" data-bs-target="#modalReserva">Reservar Machu Picchu</button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <hr class="separador">
+
+            <!-- BLOQUE 5: COTIZADOR -->
+            <section class="bloque reveal" aria-labelledby="titulo-cotizador" id="titulo-cotizador">
+                <h2>1. Tus Datos</h2>
+                <p class="ayuda">Completa tus datos para cotizar y guardar la reserva en el sistema. Cada campo solo acepta los caracteres que le corresponden.</p>
+                <form class="form" id="formCotizacion" novalidate autocomplete="off">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nombre" class="form-label">Nombre(s)</label>
+                            <input type="text" id="nombre" class="form-control" placeholder="Solo letras" maxlength="50" autocomplete="off" required>
+                            <div class="invalid-feedback">Solo letras (mínimo 2).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="apellidos" class="form-label">Apellidos</label>
+                            <input type="text" id="apellidos" class="form-control" placeholder="Solo letras" maxlength="50" autocomplete="off" required>
+                            <div class="invalid-feedback">Solo letras (mínimo 2).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="correo" class="form-label">Correo electrónico</label>
+                            <input type="text" id="correo" class="form-control" placeholder="usuario@dominio.com" maxlength="100" inputmode="email" spellcheck="false" autocomplete="off" required>
+                            <div class="invalid-feedback">Formato inválido: un solo @ y dominio (ej. usuario@gmail.com).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control" placeholder="10 dígitos" maxlength="10" inputmode="numeric" autocomplete="off" required>
+                            <div class="invalid-feedback">Deben ser exactamente 10 dígitos.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edad" class="form-label">Edad</label>
+                            <input type="text" id="edad" class="form-control" placeholder="18 a 120" maxlength="3" inputmode="numeric" autocomplete="off" required>
+                            <div class="invalid-feedback">Edad entre 18 y 120 años.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="destino" class="form-label">Destino</label>
+                            <select id="destino" class="form-select" required>
+                                <option value="">Selecciona un destino</option>
+                                <option>Valle de Bravo</option><option>Taxco</option><option>Puebla</option><option>Acapulco</option>
+                                <option>Sierra Tarahumara</option><option>Machu Picchu</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha" class="form-label">Fecha del viaje</label>
+                            <input type="date" id="fecha" class="form-control" required>
+                            <div class="invalid-feedback">Elige una fecha de hoy en adelante.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="pasajeros" class="form-label">Número de pasajeros (incluyéndote)</label>
+                            <input type="text" id="pasajeros" class="form-control" maxlength="2" inputmode="numeric" value="1" autocomplete="off">
+                            <div class="form-text">Entre 1 y 50.</div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <fieldset class="grupo">
+                                <legend>Tipo de habitación</legend>
+                                <div class="opciones">
+                                    <div class="form-check"><input class="form-check-input" type="radio" name="hab" id="habS" value="sencilla" checked><label class="form-check-label" for="habS">Sencilla</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="radio" name="hab" id="habD" value="doble"><label class="form-check-label" for="habD">Doble (+15%)</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="radio" name="hab" id="habSu" value="suite"><label class="form-check-label" for="habSu">Suite (+35%)</label></div>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="col-md-6">
+                            <fieldset class="grupo">
+                                <legend>Servicios adicionales</legend>
+                                <div class="opciones">
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" id="alimentos"><label class="form-check-label" for="alimentos">Alimentos ($450)</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" id="hospedaje"><label class="form-check-label" for="hospedaje">Hospedaje ($800)</label></div>
+                                    <div class="form-check"><input class="form-check-input" type="checkbox" id="tours"><label class="form-check-label" for="tours">Tours ($350)</label></div>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <hr class="separador">
+
+            <!-- BLOQUE 6: ACOMPAÑANTES -->
+            <section class="bloque reveal" aria-labelledby="titulo-acompanantes" id="titulo-acompanantes">
+                <h2>2. Registro de Acompañantes</h2>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small">Límite de acompañantes:</span>
+                    <span id="contadorAcompanantes" class="badge bg-secondary fs-6">0 de 0</span>
+                </div>
+                <div id="contenedorAcompanantes" class="mb-3"></div>
+                <button type="button" id="btnAgregarAcompanante" class="btn btn-outline-primary mb-3">+ Agregar Acompañante</button>
+            </section>
+
+            <hr class="separador">
+
+            <!-- BLOQUE 7: RESUMEN -->
+            <section class="bloque reveal" aria-labelledby="titulo-resumen">
+                <h2 id="titulo-resumen">3. Cotizar y Resumen</h2>
+                <div class="botones mb-4 d-flex gap-2 flex-wrap">
+                    <button type="button" id="btnCotizar" class="btn btn-primary btn-lg flex-grow-1">
+                        <span class="spinner-border spinner-border-sm d-none" id="spinnerCotizar" role="status" aria-hidden="true"></span>
+                        <span id="txtCotizar">Cotizar viaje ahora</span>
+                    </button>
+                    <button type="button" id="btnLimpiar" class="btn btn-secondary">Limpiar</button>
+                    <button type="button" id="btnImprimir" class="btn btn-outline-secondary" title="Imprimir o Guardar PDF">🖨️ PDF</button>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="switchDescuento">
+                    <label class="form-check-label fw-bold" for="switchDescuento">Aplicar descuento del 10% (Opcional)</label>
+                </div>
+
+                <div id="resumenCompra" class="resumen-compra" aria-live="polite">
+                    <p class="text-muted text-center">Aún no has seleccionado ningún viaje ni agregado acompañantes.</p>
+                </div>
+            </section>
+
+            <hr class="separador">
+
+            <!-- BLOQUE 8: PAGOS -->
+            <section class="bloque reveal" aria-labelledby="titulo-pago">
+                <h2 id="titulo-pago">4. Método de Pago</h2>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <input type="radio" class="btn-check" name="metodoPago" id="pagoTarjeta" value="tarjeta" autocomplete="off">
+                        <label class="btn btn-outline-primary w-100 py-3" for="pagoTarjeta">💳 Tarjeta de Crédito / Débito</label>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="radio" class="btn-check" name="metodoPago" id="pagoEfectivo" value="efectivo" autocomplete="off">
+                        <label class="btn btn-outline-primary w-100 py-3" for="pagoEfectivo">💵 Efectivo / Transferencia</label>
+                    </div>
+                </div>
+                <div id="formularioTarjeta" class="card shadow-sm border-0 bg-light p-4 d-none">
+                    <h4 class="h6 fw-bold mb-3">Datos de la Tarjeta</h4>
+                    <form id="formTarjeta" novalidate autocomplete="off">
+                        <div class="row g-3">
+                            <div class="col-12"><label class="form-label" for="tarjetaNombre">Nombre del titular</label><input type="text" id="tarjetaNombre" class="form-control" maxlength="50" autocomplete="off" required></div>
+                            <div class="col-12"><label class="form-label" for="tarjetaNumero">Número de tarjeta</label><input type="text" id="tarjetaNumero" class="form-control" maxlength="19" inputmode="numeric" autocomplete="off" required></div>
+                            <div class="col-6"><label class="form-label" for="tarjetaExp">Expiración</label><input type="text" id="tarjetaExp" class="form-control" placeholder="MM/AA" maxlength="5" inputmode="numeric" autocomplete="off" required></div>
+                            <div class="col-6"><label class="form-label" for="tarjetaCVV">CVV</label><input type="password" id="tarjetaCVV" class="form-control" maxlength="3" inputmode="numeric" autocomplete="off" required></div>
+                        </div>
+                        <button type="button" id="btnPagarTarjeta" class="btn btn-success w-100 mt-3">Pagar con Tarjeta</button>
+                    </form>
+                </div>
+                <div id="mensajeEfectivo" class="alert alert-info d-none text-center p-4">
+                    <h4 class="h5 fw-bold mb-2">Pago en Efectivo o Transferencia</h4>
+                    <p class="mb-3">Por tu seguridad, ponte en contacto con un asesor.</p>
+                    <a href="tel:5549113598" class="btn btn-primary">📞 Llamar al 5549113598</a>
+                    <a href="mailto:aptpullman@gmail.com" class="btn btn-outline-primary ms-2">✉️ Enviar Correo</a>
+                </div>
+            </section>
+
+            <hr class="separador">
+
+            <!-- ADMINISTRACIÓN -->
+            <section class="bloque reveal" id="admin-panel">
+                <h2>Panel de Administración (CRUD)</h2>
+                <p class="ayuda">Gestiona clientes y viajes en la base de datos. Todos los campos pasan por los mismos filtros de seguridad.</p>
+
+                <!-- BUSCADOR DE REGISTROS -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <label for="buscadorAdmin" class="form-label fw-bold">🔍 Buscar registros</label>
+                        <div class="input-group">
+                            <input type="text" id="buscadorAdmin" class="form-control" placeholder="ID, nombre, correo, destino o fecha (ej. 2027-01)" maxlength="60" autocomplete="off" spellcheck="false">
+                            <button type="button" id="btnLimpiarBusquedaAdmin" class="btn btn-outline-secondary">Limpiar</button>
+                        </div>
+                        <div id="resultadoBusquedaAdmin" class="small text-primary fw-bold mt-2" aria-live="polite"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-5 mb-4">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-primary text-white"><h5 id="adminFormTitle" class="mb-0">Registrar Nuevo Cliente</h5></div>
+                            <div class="card-body bg-light">
+                                <form id="formCliente" novalidate autocomplete="off">
+                                    <input type="hidden" id="adminId">
+                                    <input type="hidden" id="adminReservaId">
+
+                                    <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">Datos del Cliente</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="adminNombre">Nombre Completo</label>
+                                        <input type="text" id="adminNombre" class="form-control" placeholder="Solo letras" maxlength="100" autocomplete="off" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="adminCorreo">Correo Electrónico</label>
+                                        <input type="text" id="adminCorreo" class="form-control" placeholder="usuario@dominio.com" maxlength="100" inputmode="email" spellcheck="false" autocomplete="off" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="adminEdad">Edad</label>
+                                        <input type="text" id="adminEdad" class="form-control" placeholder="18 a 120" maxlength="3" inputmode="numeric" autocomplete="off" required>
+                                    </div>
+
+                                    <h6 class="fw-bold text-primary mb-3 mt-4 border-bottom pb-2">Datos del Viaje</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="adminDestino">Destino</label>
+                                        <select id="adminDestino" class="form-select">
+                                            <option value="">Sin viaje registrado</option>
+                                            <option>Valle de Bravo</option><option>Taxco</option><option>Puebla</option><option>Acapulco</option>
+                                            <option>Sierra Tarahumara</option><option>Machu Picchu</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="adminFecha">Fecha del Viaje</label>
+                                        <input type="date" id="adminFecha" class="form-control">
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <label class="form-label" for="adminPasajeros">Pasajeros</label>
+                                            <input type="text" id="adminPasajeros" class="form-control" maxlength="2" inputmode="numeric" value="1" autocomplete="off">
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <label class="form-label" for="adminTotal">Total Pagado (MXN)</label>
+                                            <input type="text" id="adminTotal" class="form-control" maxlength="12" inputmode="decimal" value="0" autocomplete="off">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="adminSwitchDescuento">
+                                        <label class="form-check-label fw-bold" for="adminSwitchDescuento">Aplicar descuento del 10%</label>
+                                    </div>
+
+                                    <button type="submit" id="btnAdminGuardar" class="btn btn-success w-100">Guardar Cliente</button>
+                                    <button type="button" id="btnAdminCancelar" class="btn btn-secondary w-100 mt-2 d-none">Cancelar Edición</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-7">
+                        <h4 class="h5 fw-bold text-primary mb-3">Clientes Registrados</h4>
+                        <div class="table-responsive shadow-sm rounded mb-5">
+                            <table class="table table-hover table-bordered mb-0">
+                                <thead class="table-dark">
+                                    <tr><th>ID</th><th>Cliente</th><th>Correo</th><th>Edad</th><th>Viaje Registrado</th><th class="text-center">Acciones</th></tr>
+                                </thead>
+                                <tbody id="adminTablaClientes"><tr><td colspan="6" class="text-center text-muted">Cargando clientes...</td></tr></tbody>
+                            </table>
+                        </div>
+
+                        <h4 class="h5 fw-bold text-primary mb-3">Historial de Reservas</h4>
+                        <div class="table-responsive shadow-sm rounded">
+                            <table class="table table-hover table-bordered mb-0">
+                                <thead class="table-dark">
+                                    <tr><th>ID</th><th>Cliente</th><th>Destino</th><th>Fecha Viaje</th><th>Pax</th><th>Total</th><th class="text-center">Acciones</th></tr>
+                                </thead>
+                                <tbody id="adminTablaReservas"><tr><td colspan="7" class="text-center text-muted">Cargando reservas...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="separador">
+
+            <!-- CONTACTO -->
+            <section class="bloque reveal" aria-labelledby="titulo-contacto" id="titulo-contacto">
+                <h2 id="titulo-contacto">Contacto</h2>
+                <div class="contacto">
+                    <p><span class="label">Teléfono</span> 5549113598</p>
+                    <p><span class="label">Correo</span> aptpullman@gmail.com</p>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- MODALES -->
+    <div class="modal fade" id="modalLogin" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Iniciar sesión</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-body">
+                    <form id="formLogin" novalidate>
+                        <label for="loginCorreo" class="form-label">Correo</label>
+                        <input type="text" id="loginCorreo" class="form-control mb-2" maxlength="100" inputmode="email" spellcheck="false" autocomplete="username" required>
+                        <label for="loginPass" class="form-label">Contraseña</label>
+                        <input type="password" id="loginPass" class="form-control mb-3" maxlength="40" autocomplete="current-password" required>
+                        <div id="avisoLogin" class="alert d-none"></div>
+                        <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalDescuento" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark"><h5 class="modal-title fw-bold">🎁 Reclamar Cupón</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-body text-center">
+                    <input type="text" id="inputCupon" class="form-control form-control-lg text-center fw-bold mb-3" placeholder="Ej. APT-VIP-10" maxlength="20" autocomplete="off">
+                    <div id="mensajeCupon" class="alert d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" id="btnAplicarCupon" class="btn btn-warning fw-bold">Aplicar Cupón</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalReserva" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Reservar paquete</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-body"><p id="textoReserva">...</p></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" id="btnModalReservaAccion" class="btn btn-primary">Ir a cotizar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;">
+        <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+            <div class="toast-header"><strong class="me-auto">APT Pullman Tours</strong><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button></div>
+            <div class="toast-body" id="toastBody"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts3.js"></script>
+</body>
+</html>

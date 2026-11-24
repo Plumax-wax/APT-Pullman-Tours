@@ -1,0 +1,379 @@
+/* ============================================================
+   SISTEMA WEB APT | Autobuses Pullman Tours
+   Archivo: estilosP7.css
+   ============================================================ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --azul-900: #0f2f57;
+    --azul-700: #1e5fa8;
+    --azul-500: #2c7fd1;
+    --azul-100: #e8f2fc;
+    --azul-050: #f5f9fd;
+    --verde-700: #0a7d2c;
+    --vino-700: #b00020;
+    --gris-900: #1f2937;
+    --gris-700: #374151;
+    --gris-500: #6b7280;
+    --radio: 8px;
+    --sombra-sm: 0 2px 6px rgba(15, 47, 87, 0.06);
+    --sombra-md: 0 6px 16px rgba(15, 47, 87, 0.10);
+    --sombra-lg: 0 14px 40px rgba(15, 47, 87, 0.16);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(160deg, #eef4fb 0%, #d7e6f5 100%);
+    color: var(--gris-900);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background 0.4s ease, color 0.4s ease;
+}
+
+h1, h2, h3, .btn, .eslogan, .precio { font-family: 'Poppins', system-ui, sans-serif; }
+
+/* ---------- CAJA ---------- */
+.caja {
+    background: #fff;
+    border-top: 6px solid var(--azul-700);
+    box-shadow: var(--sombra-lg);
+    transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+
+/* ---------- ANIMACIÓN SCROLL (REVEAL) ---------- */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ---------- LOGO Y ESLOGAN ---------- */
+.bloque-logo .logo { transition: transform 0.25s ease; }
+.bloque-logo .logo:hover { transform: scale(1.05); }
+.eslogan {
+    color: var(--azul-700);
+    font-style: italic;
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-block;
+    background: linear-gradient(90deg, var(--azul-700) 0%, #4fb3ff 50%, var(--azul-700) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: transform 0.25s ease;
+}
+.eslogan:hover { transform: scale(1.05); }
+.eslogan.shimmer { animation: shine 1.5s linear infinite; }
+@keyframes shine { to { background-position: 200% center; } }
+
+/* ---------- SEPARADORES Y TÍTULOS ---------- */
+.separador { 
+    border: none; 
+    border-top: 1px solid var(--azul-100); 
+    margin: 40px 0; 
+    transition: border-color 0.4s ease; 
+}
+.bloque h2 { 
+    color: var(--azul-900); 
+    font-size: 1.4rem; 
+    font-weight: 700; 
+    padding-bottom: 8px; 
+    margin-bottom: 20px; 
+    border-bottom: 2px solid var(--azul-100); 
+    transition: color 0.4s ease, border-color 0.4s ease; 
+}
+.ayuda { font-size: 0.9rem; color: var(--gris-500); margin-bottom: 15px; }
+
+/* ---------- FORMULARIOS ---------- */
+.form-label { 
+    font-weight: 600; 
+    font-size: 0.9rem; 
+    color: var(--gris-700); 
+    transition: color 0.4s ease; 
+}
+.form-control, .form-select { 
+    background: var(--azul-050); 
+    border: 1.5px solid var(--azul-100); 
+    color: var(--gris-900);
+    transition: all 0.25s ease; 
+}
+.form-control:focus, .form-select:focus { 
+    background: #fff; 
+    border-color: var(--azul-700); 
+    box-shadow: 0 0 0 3px rgba(30, 95, 168, 0.15); 
+}
+.form-control.is-invalid, .form-select.is-invalid { border-color: var(--vino-700); background-color: #fff3f3; }
+.form-control.is-valid, .form-select.is-valid { border-color: var(--verde-700); }
+
+/* ---------- BOTONES ---------- */
+.btn { 
+    border-radius: var(--radio); 
+    font-weight: 600; 
+    transition: transform .18s ease, box-shadow .18s ease, background-color .25s ease; 
+}
+.btn:active:not(:disabled) { transform: translateY(0) scale(.96); box-shadow: none; }
+.btn-primary { 
+    background: linear-gradient(135deg, var(--azul-700), var(--azul-500)); 
+    border: none; 
+    box-shadow: 0 4px 10px rgba(30, 95, 168, 0.28); 
+}
+.btn-primary:hover { 
+    background: linear-gradient(135deg, #164a85, var(--azul-700)); 
+    transform: translateY(-2px); 
+    box-shadow: 0 8px 16px rgba(30, 95, 168, 0.35); 
+}
+.btn-pulso { animation: pulsoBtn .45s ease; }
+@keyframes pulsoBtn { 
+    0% { box-shadow: 0 0 0 0 rgba(10,125,44,.55); } 
+    100% { box-shadow: 0 0 0 14px rgba(10,125,44,0); } 
+}
+
+/* ---------- CARRUSEL Y TARJETAS ---------- */
+.carrusel-animado .carousel-item .img-carrusel { transition: transform 5s ease; }
+.carrusel-animado .carousel-item.active .img-carrusel { transform: scale(1.1); }
+
+.tarjeta-viaje-premium {
+    cursor: pointer;
+    background: var(--azul-050);
+    border: 1px solid var(--azul-100) !important;
+    border-radius: var(--radio);
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.4s ease, border-color 0.4s ease;
+}
+.tarjeta-viaje-premium:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(30, 95, 168, 0.2) !important; }
+.tarjeta-viaje-premium.seleccionada { border: 2px solid var(--azul-700) !important; background: var(--azul-100) !important; }
+
+/* ---------- PAQUETES ---------- */
+.paquete { 
+    background: var(--azul-050); 
+    border: 1px solid var(--azul-100); 
+    border-radius: var(--radio); 
+    padding: 24px 26px; 
+    box-shadow: var(--sombra-sm); 
+    transition: background 0.4s ease, border-color 0.4s ease; 
+}
+.paquete-img { 
+    display: block; 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    border-radius: var(--radio); 
+    margin-bottom: 18px; 
+}
+.paquete-titulo { color: var(--azul-900); font-size: 1.15rem; margin-bottom: 10px; font-weight: 700; }
+.paquete-info { list-style: none; padding: 0; display: grid; gap: 8px; margin-bottom: 16px; }
+.paquete-info li { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 8px 12px; 
+    background: #fff; 
+    border-radius: var(--radio); 
+    border-left: 3px solid var(--azul-700); 
+    font-size: 0.94rem; 
+    transition: background 0.4s ease, border-color 0.4s ease; 
+}
+.paquete-info .label { font-weight: 600; color: var(--azul-900); }
+
+/* ---------- ACOMPAÑANTES ---------- */
+.fila-acompanante {
+    display: grid;
+    grid-template-columns: 1fr 140px auto;
+    gap: 12px;
+    align-items: end;
+    padding: 14px;
+    margin-bottom: 10px;
+    background: var(--azul-050);
+    border: 1px solid var(--azul-100);
+    border-radius: var(--radio);
+    animation: filaEntra .3s ease-out;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+.fila-acompanante.saliendo { animation: filaSale .25s ease-in forwards; }
+@keyframes filaEntra { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes filaSale  { to { opacity: 0; transform: translateX(30px); } }
+
+.btn-eliminar { 
+    background: transparent; 
+    color: var(--vino-700); 
+    border: 1.5px solid var(--vino-700); 
+    border-radius: var(--radio); 
+    padding: 6px 14px; 
+    font-weight: 600; 
+    transition: all 0.2s ease; 
+}
+.btn-eliminar:hover { background: var(--vino-700); color: #fff; transform: translateY(-2px); }
+
+/* ---------- RESUMEN DE COMPRA ---------- */
+.resumen-compra { 
+    background: var(--azul-050); 
+    border: 1px solid var(--azul-100); 
+    border-radius: var(--radio); 
+    padding: 20px; 
+    transition: background 0.4s ease, border-color 0.4s ease; 
+}
+.resumen-titulo { 
+    color: var(--azul-700); 
+    border-bottom: 2px dashed var(--azul-100); 
+    padding-bottom: 10px; 
+    margin-bottom: 15px; 
+    font-weight: 700; 
+    transition: color 0.4s ease, border-color 0.4s ease; 
+}
+.resumen-item { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 8px 0; 
+    border-bottom: 1px solid var(--gris-100); 
+    font-size: 0.95rem; 
+    transition: border-color 0.4s ease; 
+}
+.resumen-total { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-top: 15px; 
+    padding-top: 15px; 
+    border-top: 2px solid var(--azul-100); 
+    font-size: 1.3rem; 
+    color: var(--verde-700); 
+    font-weight: 700; 
+    transition: border-color 0.4s ease; 
+}
+.destello { animation: destelloAnim 0.4s ease-out; }
+@keyframes destelloAnim { 0% { background-color: #d4edda; transform: scale(1.02); } 100% { background-color: transparent; transform: scale(1); } }
+
+/* ---------- MÉTODOS DE PAGO ---------- */
+.btn-check:checked + .btn-outline-primary {
+    background-color: var(--azul-700);
+    color: white;
+    border-color: var(--azul-700);
+}
+
+/* Ajuste para el cupón */
+#inputCupon {
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Ajuste para el buscador */
+#resultadoBusqueda { 
+    word-break: break-all; 
+}
+
+/* ============================================================
+   MODO OSCURO MEJORADO (PRO)
+   ============================================================ */
+body.modo-oscuro {
+    --bg-1: #0a1628;
+    --bg-2: #152238;
+    --bg-card: #16223a;
+    --bg-elev: #1c2b45;
+    --bg-input: #0e1a2c;
+    --border-soft: #24344d;
+    --border-strong: #2c4160;
+    --text-main: #e5ecf6;
+    --text-soft: #c9d6e8;
+    --text-muted: #8fa0b8;
+    --azul-soft: #a9cdf5;
+
+    background: radial-gradient(circle at 50% 0%, #12203a 0%, #0a1628 60%, #050b14 100%);
+    color: var(--text-main);
+}
+
+/* Transiciones globales para todos los componentes */
+body.modo-oscuro .caja, body.modo-oscuro .tarjeta-viaje-premium, body.modo-oscuro .paquete, 
+body.modo-oscuro .contacto, body.modo-oscuro .form-control, body.modo-oscuro .form-select, 
+body.modo-oscuro .resumen-compra, body.modo-oscuro .fila-acompanante, body.modo-oscuro .modal-content {
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+
+body.modo-oscuro .caja {
+    background: var(--bg-card);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--border-soft);
+    border-top-color: var(--azul-500);
+}
+
+/* Textos y Títulos */
+body.modo-oscuro h1, body.modo-oscuro h2, body.modo-oscuro h3, body.modo-oscuro h5, body.modo-oscuro .navbar-brand { color: var(--azul-soft) !important; }
+body.modo-oscuro .separador { border-top-color: var(--border-soft); }
+body.modo-oscuro .bloque h2 { border-bottom-color: var(--border-soft); }
+body.modo-oscuro .ayuda, body.modo-oscuro .text-muted { color: var(--text-muted) !important; }
+body.modo-oscuro .form-label { color: var(--text-soft); }
+
+/* Inputs y Selects */
+body.modo-oscuro .form-control, body.modo-oscuro .form-select {
+    background-color: var(--bg-input) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-soft) !important;
+}
+body.modo-oscuro .form-control::placeholder { color: #6f819a !important; }
+body.modo-oscuro .form-control:focus, body.modo-oscuro .form-select:focus {
+    background-color: #101d33 !important;
+    border-color: var(--azul-500) !important;
+    box-shadow: 0 0 0 3px rgba(44, 127, 209, 0.25) !important;
+}
+
+/* Tarjetas y Paquetes */
+body.modo-oscuro .tarjeta-viaje-premium { background: var(--bg-elev) !important; border-color: var(--border-soft) !important; }
+body.modo-oscuro .tarjeta-viaje-premium h5 { color: var(--azul-soft) !important; }
+body.modo-oscuro .paquete { background: var(--bg-elev); border-color: var(--border-soft); }
+body.modo-oscuro .paquete-info li { background: var(--bg-input); border-left-color: var(--azul-500); color: var(--text-soft); }
+
+/* Acompañantes y Resumen */
+body.modo-oscuro .resumen-compra, body.modo-oscuro .fila-acompanante { background: var(--bg-input); border-color: var(--border-soft); }
+body.modo-oscuro .resumen-titulo { color: var(--azul-soft); border-bottom-color: var(--border-soft); }
+body.modo-oscuro .resumen-item { border-bottom-color: var(--border-soft); color: var(--text-soft); }
+body.modo-oscuro .resumen-total { border-top-color: var(--border-soft); color: #7ee0a1; }
+
+/* Modales y Toasts */
+body.modo-oscuro .modal-content { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-soft); }
+body.modo-oscuro .modal-header, body.modo-oscuro .modal-footer { border-color: var(--border-soft); }
+body.modo-oscuro .modal-title { color: var(--azul-soft); }
+body.modo-oscuro .btn-close { filter: invert(1) brightness(1.4); }
+body.modo-oscuro .toast { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-soft); }
+body.modo-oscuro .toast-header { background: var(--bg-elev); color: var(--text-soft); border-bottom: 1px solid var(--border-soft); }
+
+/* Alerts */
+body.modo-oscuro .alert-info { background: #132a47; color: #a9cdf5; border-color: #1e5fa8; }
+body.modo-oscuro .alert-danger { background: #2a1519; color: #ff9ba8; border-color: #5a1e26; }
+body.modo-oscuro .alert-success { background: #0f2a18; color: #7ee0a1; border-color: #14a344; }
+
+/* Navbar y Botones */
+body.modo-oscuro .navbar.bg-primary { background: linear-gradient(135deg, #0d1b2a, #143e6b) !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); }
+body.modo-oscuro .btn-outline-primary { color: var(--azul-soft); border-color: var(--azul-500); }
+body.modo-oscuro .btn-outline-primary:hover { background: var(--azul-500); color: #fff; }
+
+/* Selector de fecha (Calendario) en modo oscuro */
+body.modo-oscuro input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+/* Botón de tema (Animación) */
+.btn-modo-nav svg { transition: transform 0.4s ease; }
+body.modo-oscuro .btn-modo-nav svg { transform: rotate(180deg); }
+
+/* ============================================================
+   ESTILOS DE IMPRESIÓN (Guardar PDF)
+   ============================================================ */
+@media print {
+    body { background: white; color: black; }
+    nav, header, .bloque:not(#titulo-resumen), .modal, .toast-container, #btnCotizar, #btnLimpiar, #btnImprimir {
+        display: none !important;
+    }
+    #titulo-resumen { display: block !important; }
+    .caja { box-shadow: none; border: none; padding: 0; }
+    .resumen-compra { border: 2px solid #000; padding: 20px; page-break-inside: avoid; }
+    h2 { border-bottom: 2px solid #000; color: #000; }
+}
+
+/* Responsividad */
+@media (max-width: 640px) { 
+    .fila-acompanante { grid-template-columns: 1fr; } 
+}

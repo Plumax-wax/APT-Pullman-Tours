@@ -1,0 +1,50 @@
+### =============================================
+### PRUEBAS DE LA PRÁCTICA 6 - CRUD CON SQLITE
+### =============================================
+
+### 1. CREAR Cliente (POST)
+POST http://127.0.0.1:5000/api/clientes
+Content-Type: application/json
+
+{
+    "nombre": "Julia Fernandez",
+    "correo": "julia@tlahuac.com",
+    "edad": 22
+}
+
+### 2. LEER Todos los Clientes (GET)
+GET http://127.0.0.1:5000/api/clientes
+
+### 3. LEER un Cliente por ID (GET)
+# Cambia el número 1 por el ID que te haya devuelto la creación
+GET http://127.0.0.1:5000/api/clientes/1
+
+### 4. ACTUALIZAR un Cliente (PUT)
+# Cambia el número 1 por el ID real
+PUT http://127.0.0.1:5000/api/clientes/1
+Content-Type: application/json
+
+{
+    "nombre": "Julia Fernandez Actualizada",
+    "correo": "julia.nueva@tlahuac.com",
+    "edad": 23
+}
+
+### 5. ELIMINAR un Cliente (DELETE)
+# Cambia el número 1 por el ID real
+DELETE http://127.0.0.1:5000/api/clientes/1
+
+### 6. CREAR una Reserva (POST) - Requiere un ID de cliente existente
+POST http://127.0.0.1:5000/api/reservas
+Content-Type: application/json
+
+{
+    "id_cliente": 2,
+    "destino": "Puebla",
+    "cantidad": 2,
+    "total": 1400,
+    "fecha_viaje": "2026-12-15"
+}
+
+### 7. LEER Todas las Reservas (GET)
+GET http://127.0.0.1:5000/api/reservas
