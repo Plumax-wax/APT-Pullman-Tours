@@ -1,7 +1,3 @@
-/* ============================================================
-   SISTEMA WEB APT | Autobuses Pullman Tours
-   Archivo: scripts3.js (Práctica 7 - Completo, blindado y con buscador admin)
-   ============================================================ */
 
 /* ============================================================
    BLOQUE 1: CONSTANTES Y CONFIGURACIÓN GLOBAL
@@ -14,14 +10,21 @@ const DESTINOS = {
     "Sierra Tarahumara": { precio: 16000, tema: "tema-aventura", titulo: "Sierra Tarahumara", img: "tarahumara.png" },
     "Machu Picchu": { precio: 34000, tema: "tema-aventura", titulo: "Machu Picchu", img: "Machupichu.png" }
 };
-
+const COORDENADAS = {
+    "Valle de Bravo": { lat: 19.195, lon: -100.131 },
+    "Taxco": { lat: 18.556, lon: -99.605 },
+    "Puebla": { lat: 19.041, lon: -98.206 },
+    "Acapulco": { lat: 16.853, lon: -99.823 },
+    "Sierra Tarahumara": { lat: 27.183, lon: -107.533 },
+    "Machu Picchu": { lat: -13.163, lon: -72.545 }
+};
 const HABITACIONES = { sencilla: { nombre: "Sencilla", factor: 1.00 }, doble: { nombre: "Doble", factor: 1.15 }, suite: { nombre: "Suite", factor: 1.35 } };
 const SERVICIOS = { alimentos: { nombre: "Alimentos", costo: 450 }, hospedaje: { nombre: "Hospedaje", costo: 800 }, tours: { nombre: "Tours", costo: 350 } };
 
 const estado = { sesion: false, correoUsuario: "", totalAnterior: 0, cuponAplicado: false };
 const $ = (id) => document.getElementById(id);
 const formatoMXN = (n) => "$" + n.toLocaleString("es-MX") + " MXN";
-const API_URL = 'const API_URL = 'https://apt-pullman-tours.onrender.com/api';
+const API_URL = 'https://apt-pullman-tours.onrender.com/api';
 
 const escapeHTML = (s) => String(s ?? "").replace(/[&<>"']/g, c =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -244,12 +247,35 @@ function actualizarResumen() {
     html += `<div class="resumen-total" id="bloqueTotal"><span>Total:</span> <span id="numTotal">${formatoMXN(total)}</span></div>`;
     resumenDiv.innerHTML = html;
 
+    // --- AQUI ESTA LA MAGIA DE LA ACTIVIDAD 3 ---
+    mostrarClima(destino, resumenDiv);
+
     if (estado.totalAnterior !== total && estado.totalAnterior !== 0) { animarConteo(estado.totalAnterior, total); $("bloqueTotal").classList.add("destello"); setTimeout(() => $("bloqueTotal")?.classList.remove("destello"), 400); }
     estado.totalAnterior = total;
 }
 
-function animarConteo(inicio, fin) { const el = $("numTotal"); if (!el) return; const duracion = 400; let inicioTimestamp = null; function paso(timestamp) { if (!inicioTimestamp) inicioTimestamp = timestamp; const progreso = Math.min((timestamp - inicioTimestamp) / duracion, 1); const actual = Math.floor(progreso * (fin - inicio) + inicio); el.textContent = formatoMXN(actual); if (progreso < 1) window.requestAnimationFrame(paso); } window.requestAnimationFrame(paso); }
+async function mostrarClima(destino, contenedorResumen) {
+    if (!COORDENADAS[destino]) return;
+    const { lat, lon } = COORDENADAS[destino];
+    
+    try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const data = await res.json();
+        const clima = data.current_weather;
+        
+        const climaDiv = document.createElement("div");
+        climaDiv.className = "alert alert-info mt-3 py-2 text-center small";
+        climaDiv.innerHTML = `<strong>☀️ Clima actual en ${destino}:</strong> ${clima.temperature}°C, Viento: ${clima.windspeed} km/h`;
+        
+        const bloqueTotal = contenedorResumen.querySelector('.resumen-total');
+        if (bloqueTotal) contenedorResumen.insertBefore(climaDiv, bloqueTotal);
+        
+    } catch (e) {
+        console.error("Error al obtener el clima", e);
+    }
+}
 
+function animarConteo(inicio, fin) { const el = $("numTotal"); if (!el) return; const duracion = 400; let inicioTimestamp = null; function paso(timestamp) { if (!inicioTimestamp) inicioTimestamp = timestamp; const progreso = Math.min((timestamp - inicioTimestamp) / duracion, 1); const actual = Math.floor(progreso * (fin - inicio) + inicio); el.textContent = formatoMXN(actual); if (progreso < 1) window.requestAnimationFrame(paso); } window.requestAnimationFrame(paso); }
 /* ============================================================
    BLOQUE 8: ACOMPAÑANTES
    ============================================================ */

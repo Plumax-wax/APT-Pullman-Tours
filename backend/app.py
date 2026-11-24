@@ -1,6 +1,7 @@
 # backend/app.py
 import re
 import math
+import requests # <-- Necesario para la Actividad 4
 import psycopg2
 from datetime import datetime, date
 from flask import Flask, request, jsonify
@@ -12,7 +13,7 @@ app = Flask(__name__)
 CORS(app)
 init_db()
 
-# ---------------- VALIDACIONES (mismas reglas que el frontend) ----------------
+# ---------------- VALIDACIONES ----------------
 LETRA = r"A-Za-zÁÉÍÓÚáéíóúÑñÜü"
 RE_NOMBRE = re.compile(rf"^[{LETRA}]+(?: [{LETRA}]+)*$")
 RE_CORREO = re.compile(r"^[A-Za-z0-9._-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$")
@@ -23,7 +24,6 @@ def texto(valor):
     return str(valor if valor is not None else "").strip()
 
 def validar_cliente(datos):
-    """Devuelve (error, (nombre, correo, edad))."""
     nombre = " ".join(texto(datos.get("nombre")).split())
     correo = texto(datos.get("correo")).lower()
 
@@ -40,7 +40,6 @@ def validar_cliente(datos):
     return None, (nombre, correo, edad)
 
 def validar_viaje(datos, clave_pasajeros="num_pasajeros", clave_total="total_pagado", clave_fecha="fecha_viaje", fecha_obligatoria=False):
-    """Devuelve (error, (destino, fecha, pasajeros, total))."""
     destino = texto(datos.get("destino"))
     if destino not in DESTINOS_VALIDOS:
         return "Destino inválido.", None
@@ -84,12 +83,11 @@ def crear_cliente():
     try:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) AS total FROM clientes")
-        count = cursor.fetchone()['total'] # En PostgreSQL usamos el alias 'total'
+        count = cursor.fetchone()['total']
         
         if count >= MAX_CLIENTES:
-            return Respuesta.error("Límite de usuarios alcanzado. No se pueden registrar más de 50 clientes.", 400)
+            return Respuesta.error("Límite de usuarios alcanzado.", 400)
 
-        # PostgreSQL usa RETURNING id para obtener el ID recién insertado
         cursor.execute("INSERT INTO clientes (nombre, correo, edad) VALUES (%s, %s, %s) RETURNING id", (nombre, correo, edad))
         nuevo_id = cursor.fetchone()['id']
         conn.commit()
@@ -101,7 +99,7 @@ def crear_cliente():
         conn.close()
 
 
-# --- LEER TODOS LOS CLIENTES (CON SUS VIAJES) ---
+# --- LEER TODOS LOS CLIENTES ---
 @app.route('/api/clientes', methods=['GET'])
 def obtener_clientes():
     conn = get_db_connection()
@@ -161,7 +159,7 @@ def actualizar_cliente(id):
         conn.close()
 
 
-# --- ELIMINAR CLIENTE (y sus reservas) ---
+# --- ELIMINAR CLIENTE ---
 @app.route('/api/clientes/<int:id>', methods=['DELETE'])
 def eliminar_cliente(id):
     conn = get_db_connection()
@@ -179,7 +177,7 @@ def eliminar_cliente(id):
         conn.close()
 
 
-# --- CREAR RESERVA (SOLO RESERVA) ---
+# --- CREAR RESERVA ---
 @app.route('/api/reservas', methods=['POST'])
 def api_crear_reserva():
     datos = request.get_json(silent=True) or {}
@@ -202,7 +200,7 @@ def api_crear_reserva():
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM clientes WHERE id = %s", (id_cliente,))
         if cursor.fetchone() is None:
-            return Respuesta.error("El cliente no existe. Regístralo primero.", 404)
+            return Respuesta.error("El cliente no existe.", 404)
             
         cursor.execute(
             "INSERT INTO reservas (id_cliente, destino, fecha_viaje, num_pasajeros, total_pagado) VALUES (%s, %s, %s, %s, %s)",
@@ -276,7 +274,7 @@ def obtener_reservas():
         conn.close()
 
 
-# --- GUARDAR RESERVA COMPLETA DESDE COTIZADOR (CLIENTE + VIAJE) ---
+# --- GUARDAR RESERVA COMPLETA ---
 @app.route('/api/guardar_reserva_completa', methods=['POST'])
 def guardar_reserva_completa():
     datos = request.get_json(silent=True) or {}
@@ -308,7 +306,7 @@ def guardar_reserva_completa():
             cursor.execute("SELECT COUNT(*) AS total FROM clientes")
             count = cursor.fetchone()['total']
             if count >= MAX_CLIENTES:
-                return Respuesta.error("Límite de usuarios alcanzado. No se pueden registrar más de 50 clientes.", 400)
+                return Respuesta.error("Límite de usuarios alcanzado.", 400)
                 
             cursor.execute("INSERT INTO clientes (nombre, correo, edad) VALUES (%s, %s, %s) RETURNING id", (nombre, correo, edad))
             id_cliente = cursor.fetchone()['id']
@@ -318,6 +316,23 @@ def guardar_reserva_completa():
             (id_cliente, destino, fecha, pasajeros, total)
         )
         conn.commit()
+
+        # --- ACTIVIDAD 4: INTEROPERABILIDAD ---
+        try:
+            # Le enviamos los datos a nuestro endpoint de "facturación"
+            requests.post("https://apt-pullman-tours.onrender.com/api/sistema_facturacion", json={
+                "origen": "Sistema de Reservas APT",
+                "evento": "nueva_reserva",
+                "cliente": nombre,
+                "correo": correo,
+                "destino": destino,
+                "total_pagado": total
+            }, timeout=5)
+            print("Datos enviados al Sistema de Facturación exitosamente.")
+        except Exception as e:
+            print(f"Error al comunicarse con el sistema de facturación: {e}")
+        # ---------------------------------------
+
         return Respuesta.exito(f"Reserva a {destino} guardada exitosamente", {"id_cliente": id_cliente})
 
     except Exception as e:
@@ -325,6 +340,38 @@ def guardar_reserva_completa():
         return Respuesta.error(f"Error al guardar: {str(e)}", 500)
     finally:
         conn.close()
+
+
+# --- SISTEMA B: RECEPTOR DE FACTURACIÓN (Actividad 4) ---
+@app.route('/api/sistema_facturacion', methods=['POST'])
+def sistema_facturacion():
+    datos = request.get_json(silent=True) or {}
+    print("\n--- SISTEMA DE FACTURACIÓN RECIBIÓ DATOS ---")
+    print(f"Cliente: {datos.get('cliente')}")
+    print(f"Destino: {datos.get('destino')}")
+    print(f"Total: ${datos.get('total_pagado')}")
+    print("--------------------------------------------\n")
+    
+    return jsonify({
+        "estatus": "exito",
+        "mensaje": "Factura generada correctamente",
+        "folio_factura": "FACT-2026-001"
+    }), 200
+
+
+# --- RUTA RAÍZ ---
+@app.route('/')
+def index():
+    return jsonify({
+        "mensaje": "API de APT Pullman Tours funcionando correctamente",
+        "version": "1.0",
+        "endpoints": [
+            "/api/clientes",
+            "/api/reservas",
+            "/api/guardar_reserva_completa",
+            "/api/sistema_facturacion"
+        ]
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
