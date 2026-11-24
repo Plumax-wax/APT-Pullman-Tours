@@ -21,7 +21,7 @@ const SERVICIOS = { alimentos: { nombre: "Alimentos", costo: 450 }, hospedaje: {
 const estado = { sesion: false, correoUsuario: "", totalAnterior: 0, cuponAplicado: false };
 const $ = (id) => document.getElementById(id);
 const formatoMXN = (n) => "$" + n.toLocaleString("es-MX") + " MXN";
-const API_URL = 'http://127.0.0.1:5000/api';
+const API_URL = 'const API_URL = 'https://apt-pullman-tours.onrender.com/api';
 
 const escapeHTML = (s) => String(s ?? "").replace(/[&<>"']/g, c =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
