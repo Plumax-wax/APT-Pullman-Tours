@@ -1,377 +1,202 @@
 # backend/app.py
-import re
-import math
-import requests # <-- Necesario para la Actividad 4
-import psycopg2
-from datetime import datetime, date
-from flask import Flask, request, jsonify
+import sqlite3
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
-from componentes import Respuesta
+from werkzeug.security import check_password_hash, generate_password_hash
+from functools import wraps
+from componentes import Validador, Respuesta
 from database import get_db_connection, init_db
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = 'super_secret_key_apt_2026'
+CORS(app, supports_credentials=True)
 init_db()
 
-# ---------------- VALIDACIONES ----------------
-LETRA = r"A-Za-zÁÉÍÓÚáéíóúÑñÜü"
-RE_NOMBRE = re.compile(rf"^[{LETRA}]+(?: [{LETRA}]+)*$")
-RE_CORREO = re.compile(r"^[A-Za-z0-9._-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$")
-DESTINOS_VALIDOS = {"Valle de Bravo", "Taxco", "Puebla", "Acapulco", "Sierra Tarahumara", "Machu Picchu"}
-MAX_CLIENTES = 50
+# Decorador para verificar Admin
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session or session.get('rol') != 'admin':
+            return Respuesta.error("Acceso denegado. Se requiere rol de administrador.", 403)
+        return f(*args, **kwargs)
+    return decorated_function
 
-def texto(valor):
-    return str(valor if valor is not None else "").strip()
-
-def validar_cliente(datos):
-    nombre = " ".join(texto(datos.get("nombre")).split())
-    correo = texto(datos.get("correo")).lower()
-
-    if not (2 <= len(nombre) <= 100) or not RE_NOMBRE.match(nombre):
-        return "El nombre solo debe contener letras y espacios (mínimo 2).", None
-    if len(correo) > 100 or not RE_CORREO.match(correo):
-        return "El correo es inválido (un solo @, sin símbolos raros).", None
-    try:
-        edad = int(datos.get("edad"))
-    except (ValueError, TypeError):
-        return "La edad debe ser un número válido.", None
-    if edad < 18 or edad > 120:
-        return "La edad debe estar entre 18 y 120 años.", None
-    return None, (nombre, correo, edad)
-
-def validar_viaje(datos, clave_pasajeros="num_pasajeros", clave_total="total_pagado", clave_fecha="fecha_viaje", fecha_obligatoria=False):
-    destino = texto(datos.get("destino"))
-    if destino not in DESTINOS_VALIDOS:
-        return "Destino inválido.", None
-
-    fecha = texto(datos.get(clave_fecha)) or None
-    if fecha_obligatoria and not fecha:
-        return "La fecha del viaje es obligatoria.", None
-    if fecha:
-        try:
-            datetime.strptime(fecha, "%Y-%m-%d")
-        except ValueError:
-            return "Fecha inválida (formato AAAA-MM-DD).", None
-
-    try:
-        pasajeros = int(datos.get(clave_pasajeros, 1))
-    except (ValueError, TypeError):
-        return "El número de pasajeros debe ser un número.", None
-    if pasajeros < 1 or pasajeros > 50:
-        return "Los pasajeros deben estar entre 1 y 50.", None
-
-    try:
-        total = float(datos.get(clave_total, 0))
-    except (ValueError, TypeError):
-        return "El total debe ser un número válido.", None
-    if math.isnan(total) or math.isinf(total) or total < 0:
-        return "El total debe ser 0 o mayor.", None
-
-    return None, (destino, fecha, pasajeros, total)
-
-
-# --- CREAR CLIENTE ---
-@app.route('/api/clientes', methods=['POST'])
-def crear_cliente():
-    datos = request.get_json(silent=True) or {}
-    error, valores = validar_cliente(datos)
-    if error:
-        return Respuesta.error(error)
-    nombre, correo, edad = valores
-
+# --- LOGIN Y LOGOUT ---
+@app.route('/api/login', methods=['POST'])
+def login():
+    datos = request.get_json()
+    correo = datos.get('correo')
+    password = datos.get('password')
+    
     conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) AS total FROM clientes")
-        count = cursor.fetchone()['total']
-        
-        if count >= MAX_CLIENTES:
-            return Respuesta.error("Límite de usuarios alcanzado.", 400)
+    user = conn.execute("SELECT * FROM usuarios WHERE correo = ?", (correo,)).fetchone()
+    conn.close()
+    
+    if user and check_password_hash(user['password_hash'], password):
+        session['user_id'] = user['id']
+        session['rol'] = user['rol']
+        session['correo'] = user['correo']
+        return Respuesta.exito("Login exitoso", {"rol": user['rol'], "correo": user['correo']})
+    return Respuesta.error("Correo o contraseña incorrectos", 401)
 
-        cursor.execute("INSERT INTO clientes (nombre, correo, edad) VALUES (%s, %s, %s) RETURNING id", (nombre, correo, edad))
-        nuevo_id = cursor.fetchone()['id']
-        conn.commit()
-        return Respuesta.exito("Cliente registrado exitosamente", {"id": nuevo_id})
-    except psycopg2.IntegrityError:
-        conn.rollback()
-        return Respuesta.error("El correo ya está registrado.", 409)
-    finally:
-        conn.close()
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return Respuesta.exito("Sesión cerrada")
 
-
-# --- LEER TODOS LOS CLIENTES ---
-@app.route('/api/clientes', methods=['GET'])
-def obtener_clientes():
+# --- SALIDAS (CONSULTA) ---
+@app.route('/api/salidas/<destino>', methods=['GET'])
+def obtener_salidas(destino):
     conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT c.id, c.nombre, c.correo, c.edad,
-                   r.id AS id_reserva, r.destino, r.fecha_viaje, r.num_pasajeros, r.total_pagado
-            FROM clientes c
-            LEFT JOIN reservas r ON c.id = r.id_cliente
-            ORDER BY c.id DESC
-        ''')
-        resultados = cursor.fetchall()
-        return Respuesta.exito("Lista de clientes obtenida", [dict(row) for row in resultados])
-    finally:
-        conn.close()
+    salidas = conn.execute("SELECT * FROM salidas WHERE destino = ? AND asientos_disponibles > 0", (destino,)).fetchall()
+    conn.close()
+    return Respuesta.exito("Salidas disponibles", [dict(s) for s in salidas])
 
-
-# --- LEER UN CLIENTE ---
-@app.route('/api/clientes/<int:id>', methods=['GET'])
-def obtener_cliente_por_id(id):
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM clientes WHERE id = %s", (id,))
-        cliente = cursor.fetchone()
-        if cliente is None:
-            return Respuesta.error("Cliente no encontrado", 404)
-        return Respuesta.exito("Cliente encontrado", dict(cliente))
-    finally:
-        conn.close()
-
-
-# --- ACTUALIZAR CLIENTE ---
-@app.route('/api/clientes/<int:id>', methods=['PUT'])
-def actualizar_cliente(id):
-    datos = request.get_json(silent=True) or {}
-    error, valores = validar_cliente(datos)
-    if error:
-        return Respuesta.error(error)
-    nombre, correo, edad = valores
-
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM clientes WHERE id = %s", (id,))
-        if cursor.fetchone() is None:
-            return Respuesta.error("Cliente no encontrado", 404)
-            
-        cursor.execute("UPDATE clientes SET nombre = %s, correo = %s, edad = %s WHERE id = %s", (nombre, correo, edad, id))
-        conn.commit()
-        return Respuesta.exito("Cliente actualizado correctamente")
-    except psycopg2.IntegrityError:
-        conn.rollback()
-        return Respuesta.error("El correo ya está en uso por otro cliente.", 409)
-    finally:
-        conn.close()
-
-
-# --- ELIMINAR CLIENTE ---
-@app.route('/api/clientes/<int:id>', methods=['DELETE'])
-def eliminar_cliente(id):
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM clientes WHERE id = %s", (id,))
-        if cursor.fetchone() is None:
-            return Respuesta.error("Cliente no encontrado", 404)
-            
-        cursor.execute("DELETE FROM reservas WHERE id_cliente = %s", (id,))
-        cursor.execute("DELETE FROM clientes WHERE id = %s", (id,))
-        conn.commit()
-        return Respuesta.exito("Cliente y sus reservas eliminados correctamente")
-    finally:
-        conn.close()
-
-
-# --- CREAR RESERVA ---
-@app.route('/api/reservas', methods=['POST'])
-def api_crear_reserva():
-    datos = request.get_json(silent=True) or {}
-    id_cliente = datos.get('id_cliente')
-    if not id_cliente:
-        return Respuesta.error("Falta el id_cliente.")
-
-    if 'num_pasajeros' not in datos and 'cantidad' in datos:
-        datos['num_pasajeros'] = datos['cantidad']
-    if 'total_pagado' not in datos and 'total' in datos:
-        datos['total_pagado'] = datos['total']
-
-    error, valores = validar_viaje(datos)
-    if error:
-        return Respuesta.error(error)
-    destino, fecha, pasajeros, total = valores
-
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM clientes WHERE id = %s", (id_cliente,))
-        if cursor.fetchone() is None:
-            return Respuesta.error("El cliente no existe.", 404)
-            
-        cursor.execute(
-            "INSERT INTO reservas (id_cliente, destino, fecha_viaje, num_pasajeros, total_pagado) VALUES (%s, %s, %s, %s, %s)",
-            (id_cliente, destino, fecha, pasajeros, total)
-        )
-        conn.commit()
-        return Respuesta.exito(f"Reserva a {destino} guardada", {"total": total})
-    finally:
-        conn.close()
-
-
-# --- ACTUALIZAR RESERVA ---
-@app.route('/api/reservas/<int:id>', methods=['PUT'])
-def actualizar_reserva(id):
-    datos = request.get_json(silent=True) or {}
-    error, valores = validar_viaje(datos)
-    if error:
-        return Respuesta.error(error)
-    destino, fecha, pasajeros, total = valores
-
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM reservas WHERE id = %s", (id,))
-        if cursor.fetchone() is None:
-            return Respuesta.error("Reserva no encontrada", 404)
-            
-        cursor.execute(
-            "UPDATE reservas SET destino = %s, fecha_viaje = %s, num_pasajeros = %s, total_pagado = %s WHERE id = %s",
-            (destino, fecha, pasajeros, total, id)
-        )
-        conn.commit()
-        return Respuesta.exito("Reserva actualizada correctamente")
-    finally:
-        conn.close()
-
-
-# --- ELIMINAR RESERVA ---
-@app.route('/api/reservas/<int:id>', methods=['DELETE'])
-def eliminar_reserva(id):
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM reservas WHERE id = %s", (id,))
-        if cursor.fetchone() is None:
-            return Respuesta.error("Reserva no encontrada", 404)
-            
-        cursor.execute("DELETE FROM reservas WHERE id = %s", (id,))
-        conn.commit()
-        return Respuesta.exito("Reserva eliminada correctamente")
-    finally:
-        conn.close()
-
-
-# --- VER TODAS LAS RESERVAS ---
-@app.route('/api/reservas', methods=['GET'])
-def obtener_reservas():
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT r.id, r.destino, r.fecha_viaje, r.num_pasajeros, r.total_pagado, r.fecha_reserva,
-                   c.nombre AS nombre_cliente, c.correo AS correo_cliente
-            FROM reservas r
-            JOIN clientes c ON r.id_cliente = c.id
-            ORDER BY r.id DESC
-        ''')
-        reservas = cursor.fetchall()
-        return Respuesta.exito("Lista de reservas obtenida", [dict(r) for r in reservas])
-    finally:
-        conn.close()
-
-
-# --- GUARDAR RESERVA COMPLETA ---
+# --- GUARDAR RESERVA COMPLETA (PÚBLICO) ---
 @app.route('/api/guardar_reserva_completa', methods=['POST'])
 def guardar_reserva_completa():
-    datos = request.get_json(silent=True) or {}
+    datos = request.get_json()
+    nombre = datos.get('nombre', '').strip()
+    correo = datos.get('correo', '').strip()
+    edad = datos.get('edad', 18) 
+    destino = datos.get('destino')
+    fecha = datos.get('fecha')
+    pasajeros = int(datos.get('pasajeros', 1))
+    total = float(datos.get('total', 0))
+    habitacion = datos.get('habitacion', 'Sencilla')
+    descuento = float(datos.get('descuento', 0))
+    acompanantes = datos.get('acompanantes', [])
 
-    error, valores_cliente = validar_cliente(datos)
-    if error:
-        return Respuesta.error(error)
-    nombre, correo, edad = valores_cliente
-
-    error, valores_viaje = validar_viaje(
-        datos, clave_pasajeros="pasajeros", clave_total="total", clave_fecha="fecha", fecha_obligatoria=True
-    )
-    if error:
-        return Respuesta.error(error)
-    destino, fecha, pasajeros, total = valores_viaje
-
-    if fecha < date.today().isoformat():
-        return Respuesta.error("La fecha del viaje no puede ser en el pasado.")
+    if not all([nombre, correo, destino, fecha]):
+        return Respuesta.error("Faltan datos obligatorios.")
+    
+    try:
+        edad_int = int(edad)
+        if edad_int < 18 or edad_int > 120:
+            return Respuesta.error("La edad debe estar entre 18 y 120 años.")
+    except:
+        return Respuesta.error("La edad debe ser un número válido.")
 
     conn = get_db_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM clientes WHERE lower(correo) = %s", (correo,))
-        cliente = cursor.fetchone()
+        # 1. Validar Cupo
+        salida = conn.execute("SELECT * FROM salidas WHERE destino = ? AND fecha_salida = ?", (destino, fecha)).fetchone()
+        if not salida or salida['asientos_disponibles'] < pasajeros:
+            return Respuesta.error("No hay suficientes asientos disponibles para esta fecha.", 400)
 
+        # 2. Obtener o crear cliente
+        cliente = conn.execute("SELECT id FROM clientes WHERE correo = ?", (correo,)).fetchone()
         if cliente:
             id_cliente = cliente['id']
         else:
-            cursor.execute("SELECT COUNT(*) AS total FROM clientes")
-            count = cursor.fetchone()['total']
-            if count >= MAX_CLIENTES:
-                return Respuesta.error("Límite de usuarios alcanzado.", 400)
-                
-            cursor.execute("INSERT INTO clientes (nombre, correo, edad) VALUES (%s, %s, %s) RETURNING id", (nombre, correo, edad))
-            id_cliente = cursor.fetchone()['id']
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO clientes (nombre, correo, edad) VALUES (?, ?, ?)", (nombre, correo, edad_int))
+            id_cliente = cursor.lastrowid
 
-        cursor.execute(
-            "INSERT INTO reservas (id_cliente, destino, fecha_viaje, num_pasajeros, total_pagado) VALUES (%s, %s, %s, %s, %s)",
-            (id_cliente, destino, fecha, pasajeros, total)
-        )
+        # 3. Crear Reserva
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO reservas (id_cliente, id_salida, destino, fecha_viaje, habitacion, num_pasajeros, total_pagado, descuento_aplicado, estado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendiente')
+        ''', (id_cliente, salida['id'], destino, fecha, habitacion, pasajeros, total, descuento))
+        id_reserva = cursor.lastrowid
+
+        # 4. Guardar Acompañantes
+        for ac in acompanantes:
+            conn.execute("INSERT INTO acompanantes (id_reserva, nombre, edad) VALUES (?, ?, ?)", (id_reserva, ac['nombre'], ac['edad']))
+
+        # 5. Descontar asientos
+        conn.execute("UPDATE salidas SET asientos_disponibles = asientos_disponibles - ? WHERE id = ?", (pasajeros, salida['id']))
+        
         conn.commit()
-
-        # --- ACTIVIDAD 4: INTEROPERABILIDAD ---
-        try:
-            # Le enviamos los datos a nuestro endpoint de "facturación"
-            requests.post("https://apt-pullman-tours.onrender.com/api/sistema_facturacion", json={
-                "origen": "Sistema de Reservas APT",
-                "evento": "nueva_reserva",
-                "cliente": nombre,
-                "correo": correo,
-                "destino": destino,
-                "total_pagado": total
-            }, timeout=5)
-            print("Datos enviados al Sistema de Facturación exitosamente.")
-        except Exception as e:
-            print(f"Error al comunicarse con el sistema de facturación: {e}")
-        # ---------------------------------------
-
-        return Respuesta.exito(f"Reserva a {destino} guardada exitosamente", {"id_cliente": id_cliente})
-
+        return Respuesta.exito("Reserva guardada exitosamente", {"id_reserva": id_reserva})
+    
+    except sqlite3.IntegrityError:
+        return Respuesta.error("Ya tienes una reserva para esta salida.", 409)
     except Exception as e:
-        conn.rollback()
         return Respuesta.error(f"Error al guardar: {str(e)}", 500)
     finally:
         conn.close()
 
+# --- RUTAS DE ADMINISTRACIÓN (PROTEGIDAS) ---
+@app.route('/api/clientes', methods=['GET'])
+@admin_required
+def obtener_clientes():
+    conn = get_db_connection()
+    query = '''
+        SELECT c.id, c.nombre, c.correo, c.edad, 
+               r.id AS id_reserva, r.destino, r.fecha_viaje, r.num_pasajeros, r.total_pagado, r.estado
+        FROM clientes c
+        LEFT JOIN reservas r ON c.id = r.id_cliente
+        ORDER BY c.id DESC
+    '''
+    resultados = conn.execute(query).fetchall()
+    conn.close()
+    return Respuesta.exito("Lista de clientes obtenida", [dict(row) for row in resultados])
 
-# --- SISTEMA B: RECEPTOR DE FACTURACIÓN (Actividad 4) ---
-@app.route('/api/sistema_facturacion', methods=['POST'])
-def sistema_facturacion():
-    datos = request.get_json(silent=True) or {}
-    print("\n--- SISTEMA DE FACTURACIÓN RECIBIÓ DATOS ---")
-    print(f"Cliente: {datos.get('cliente')}")
-    print(f"Destino: {datos.get('destino')}")
-    print(f"Total: ${datos.get('total_pagado')}")
-    print("--------------------------------------------\n")
-    
-    return jsonify({
-        "estatus": "exito",
-        "mensaje": "Factura generada correctamente",
-        "folio_factura": "FACT-2026-001"
-    }), 200
+@app.route('/api/clientes', methods=['POST'])
+@admin_required
+def crear_cliente():
+    datos = request.get_json()
+    nombre = datos.get('nombre', '').strip()
+    correo = datos.get('correo', '').strip()
+    edad = datos.get('edad', 0)
 
+    if not Validador.validar_nombre(nombre): return Respuesta.error("Nombre inválido.")
+    if not Validador.validar_correo(correo): return Respuesta.error("Correo inválido.")
+    try:
+        edad_int = int(edad)
+        if edad_int < 18 or edad_int > 120: return Respuesta.error("Edad fuera de rango.")
+    except: return Respuesta.error("Edad inválida.")
 
-# --- RUTA RAÍZ ---
-@app.route('/')
-def index():
-    return jsonify({
-        "mensaje": "API de APT Pullman Tours funcionando correctamente",
-        "version": "1.0",
-        "endpoints": [
-            "/api/clientes",
-            "/api/reservas",
-            "/api/guardar_reserva_completa",
-            "/api/sistema_facturacion"
-        ]
-    })
+    conn = get_db_connection()
+    try:
+        count = conn.execute("SELECT COUNT(*) FROM clientes").fetchone()[0]
+        if count >= 50: return Respuesta.error("Límite de 50 clientes alcanzado.", 400)
+
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO clientes (nombre, correo, edad) VALUES (?, ?, ?)", (nombre, correo, edad_int))
+        conn.commit()
+        return Respuesta.exito("Cliente registrado", {"id": cursor.lastrowid})
+    except sqlite3.IntegrityError:
+        return Respuesta.error("El correo ya está registrado.", 409)
+    finally:
+        conn.close()
+
+@app.route('/api/clientes/<int:id>', methods=['PUT', 'DELETE'])
+@admin_required
+def modificar_cliente(id):
+    if request.method == 'DELETE':
+        conn = get_db_connection()
+        conn.execute("DELETE FROM clientes WHERE id = ?", (id,))
+        conn.commit()
+        conn.close()
+        return Respuesta.exito("Cliente eliminado")
+        
+    datos = request.get_json()
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE clientes SET nombre=?, correo=?, edad=? WHERE id=?", 
+                     (datos['nombre'], datos['correo'], int(datos['edad']), id))
+        conn.commit()
+        return Respuesta.exito("Cliente actualizado")
+    except sqlite3.IntegrityError:
+        return Respuesta.error("El correo ya está en uso.", 409)
+    finally:
+        conn.close()
+
+@app.route('/api/reservas', methods=['GET'])
+@admin_required
+def obtener_reservas():
+    conn = get_db_connection()
+    reservas = conn.execute('''
+        SELECT r.id, r.destino, r.fecha_viaje, r.num_pasajeros, r.total_pagado, r.estado, r.habitacion,
+               c.nombre AS nombre_cliente, c.correo AS correo_cliente
+        FROM reservas r
+        JOIN clientes c ON r.id_cliente = c.id
+    ''').fetchall()
+    conn.close()
+    return Respuesta.exito("Lista de reservas", [dict(r) for r in reservas])
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
